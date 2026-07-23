@@ -54,8 +54,8 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
     staleTime: 60_000,
   });
 
-  const isRepeatOffender = (f: { times_scanned?: number | null; scan_count?: number | null; ballast_issue?: boolean }) =>
-    ((f.times_scanned ?? f.scan_count ?? 0) >= 3) || !!f.ballast_issue;
+  const isRepeatOffender = (f: { times_scanned?: number | null; ballast_issue?: boolean }) =>
+    ((f.times_scanned ?? 0) >= 3) || !!f.ballast_issue;
 
   const sorted = useMemo(
     () => [...fixtures].sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { numeric: true })),

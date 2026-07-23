@@ -37,7 +37,8 @@ export interface LightingFixture {
   next_maintenance_date?: string;
   installation_date?: string;
   emergency_circuit: boolean;
-  scan_count: number;
+  times_scanned: number;
+  last_scanned_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -341,10 +342,10 @@ export async function recordFixtureScan(payload: RecordFixtureScanPayload) {
         return;
     }
 
-    // First get current scan_count
+    // First get current times_scanned
     const { data: currentFixture } = await db
       .from('lighting_fixtures')
-      .select('scan_count')
+      .select('times_scanned')
       .eq('id', payload.fixture_id)
       .single();
 
@@ -355,7 +356,8 @@ export async function recordFixtureScan(payload: RecordFixtureScanPayload) {
         ballast_issue: ballastIssue,
         requires_electrician: requiresElectrician,
         reported_out_date: newStatus !== 'functional' ? new Date().toISOString() : null,
-        scan_count: (currentFixture?.scan_count || 0) + 1,
+        times_scanned: (currentFixture?.times_scanned || 0) + 1,
+        last_scanned_at: new Date().toISOString(),
       })
       .eq('id', payload.fixture_id);
 

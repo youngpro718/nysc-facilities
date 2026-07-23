@@ -1,14 +1,17 @@
 import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Lightbulb, Map, ListTodo } from 'lucide-react';
+import { RefreshCw, Lightbulb, Map, ListTodo, PlayCircle, ClipboardCheck } from 'lucide-react';
 import { LightingStatsBar } from '../lighting/LightingStatsBar';
 import { LightingFixtureTable } from '../lighting/LightingFixtureTable';
+import { WalkthroughFlow } from '../lighting/WalkthroughFlow';
 import { useLightingQueue } from '@/features/lighting/hooks/useLightingData';
 import { LightingIssuesQueue } from '@features/lighting/components/LightingIssuesQueue';
 import { LightingCoverageView } from '@features/lighting/components/LightingCoverageView';
 import { LightingRoomsTable } from '@features/lighting/components/LightingRoomsTable';
+import { listRoomsWithLightingProfiles } from '@features/lighting/services/roomLightingProfileService';
 
 interface LightingTabProps {
   buildingId?: string;
@@ -16,10 +19,23 @@ interface LightingTabProps {
 }
 
 export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
+  const queryClient = useQueryClient();
   const [needsElectricianFilter, setNeedsElectricianFilter] = useState(false);
   const [subTab, setSubTab] = useState<'issues' | 'coverage' | 'rooms'>('issues');
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
 
   const { data: lightingIssues = [], isLoading, refetch } = useLightingQueue(buildingId);
+
+  // How much of the building actually has fixtures logged at all — the real
+  // explanation for a tab that otherwise looks "all clear" for the wrong
+  // reason (nothing tracked yet, not nothing wrong).
+  const { data: profiledRooms = [], isLoading: isCoverageLoading } = useQuery({
+    queryKey: ['rooms-with-lighting-profiles'],
+    queryFn: listRoomsWithLightingProfiles,
+  });
+  const totalRooms = profiledRooms.length;
+  const roomsTracked = profiledRooms.filter(r => r.fixture_count > 0).length;
+  const coveragePercent = totalRooms > 0 ? Math.round((roomsTracked / totalRooms) * 100) : 0;
 
   // Calculate stats
   const stats = {
@@ -35,7 +51,10 @@ export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
     : lightingIssues;
 
   const handleRefresh = async () => {
-    await refetch();
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ['rooms-with-lighting-profiles'] }),
+    ]);
     onRefresh();
   };
 
@@ -53,14 +72,44 @@ export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button onClick={() => setWalkthroughOpen(true)} size="sm">
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Start Walkthrough
+          </Button>
           <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           {/* Fixtures are added per-room from the room editor (which carries the
-              required space/floor/building context) — no standalone add here. */}
+              required space/floor/building context), or in bulk via a walkthrough. */}
         </div>
       </div>
+
+      {/* Coverage banner — explains a quiet-looking tab honestly: is nothing
+          wrong, or is nothing tracked yet? Only shown once we know there's a
+          real gap, so it never nags once coverage is actually complete. */}
+      {!isCoverageLoading && totalRooms > 0 && coveragePercent < 100 && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex items-center gap-3">
+              <ClipboardCheck className="h-5 w-5 shrink-0 text-amber-500" />
+              <div>
+                <p className="text-sm font-medium">
+                  {roomsTracked} of {totalRooms} rooms have lighting tracked ({coveragePercent}%)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  The rest have no fixtures logged, so there's nothing to flag even if a light is out.
+                  Run a walkthrough to start logging real fixture status.
+                </p>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setWalkthroughOpen(true)} className="shrink-0">
+              <PlayCircle className="h-4 w-4 mr-2" />
+              Start Walkthrough
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={subTab} onValueChange={(v) => setSubTab(v as typeof subTab)} className="w-full">
         <TabsList>
@@ -103,6 +152,8 @@ export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
                 fixtures={filteredIssues}
                 isLoading={isLoading}
                 onRefresh={handleRefresh}
+                hasTrackedFixtures={roomsTracked > 0}
+                onStartWalkthrough={() => setWalkthroughOpen(true)}
               />
             </CardContent>
           </Card>
@@ -116,6 +167,8 @@ export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
           <LightingRoomsTable />
         </TabsContent>
       </Tabs>
+
+      <WalkthroughFlow open={walkthroughOpen} onOpenChange={setWalkthroughOpen} />
     </div>
   );
 }

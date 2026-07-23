@@ -51,11 +51,19 @@ interface WalkthroughFlowProps {
 
 type WalkthroughStep = 'setup' | 'scanning' | 'summary';
 
+// Radix's Select.Item forbids an empty-string value (it's reserved
+// internally for "no selection"), so the "All hallways" option needs its
+// own sentinel rather than "".
+const ALL_HALLWAYS = '__all__';
+
 export function WalkthroughFlow({ open, onOpenChange, hallwayId, floorId }: WalkthroughFlowProps) {
   const { user } = useAuth();
   const [step, setStep] = useState<WalkthroughStep>('setup');
   const [selectedFloorId, setSelectedFloorId] = useState(floorId || '');
-  const [selectedHallwayId, setSelectedHallwayId] = useState(hallwayId || '');
+  const [selectedHallwayId, setSelectedHallwayId] = useState(hallwayId || ALL_HALLWAYS);
+  // The real hallway id (or "" for "all hallways") — selectedHallwayId above
+  // is only the Select's controlled value and may hold the sentinel.
+  const effectiveHallwayId = selectedHallwayId === ALL_HALLWAYS ? '' : selectedHallwayId;
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
   const [requiresElectrician, setRequiresElectrician] = useState(false);
@@ -102,12 +110,12 @@ export function WalkthroughFlow({ open, onOpenChange, hallwayId, floorId }: Walk
   const { data: session, refetch: refetchSession } = useWalkthroughSession(sessionId || '');
 
   // Fetch walkthrough history for hallway
-  const { data: history = [] } = useWalkthroughHistory(selectedHallwayId, 1);
+  const { data: history = [] } = useWalkthroughHistory(effectiveHallwayId, 1);
   const lastWalkthrough = history[0];
 
   // Filter fixtures by hallway if selected
-  const walkthroughFixtures = selectedHallwayId
-    ? fixtures.filter(f => f.space_id === selectedHallwayId && f.space_type === 'hallway')
+  const walkthroughFixtures = effectiveHallwayId
+    ? fixtures.filter(f => f.space_id === effectiveHallwayId && f.space_type === 'hallway')
     : fixtures;
 
   const currentFixture = walkthroughFixtures[currentFixtureIndex];
@@ -136,7 +144,7 @@ export function WalkthroughFlow({ open, onOpenChange, hallwayId, floorId }: Walk
     try {
       const session = await startMutation.mutateAsync({
         floor_id: selectedFloorId,
-        hallway_id: selectedHallwayId || undefined,
+        hallway_id: effectiveHallwayId || undefined,
         started_by: user.id,
       });
 
@@ -243,7 +251,15 @@ export function WalkthroughFlow({ open, onOpenChange, hallwayId, floorId }: Walk
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Floor</Label>
-                  <Select value={selectedFloorId} onValueChange={setSelectedFloorId}>
+                  <Select
+                    value={selectedFloorId}
+                    onValueChange={(v) => {
+                      setSelectedFloorId(v);
+                      // A hallway picked on the previous floor won't be in
+                      // this floor's list — reset to "All hallways".
+                      setSelectedHallwayId(ALL_HALLWAYS);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select floor" />
                     </SelectTrigger>
@@ -265,7 +281,7 @@ export function WalkthroughFlow({ open, onOpenChange, hallwayId, floorId }: Walk
                         <SelectValue placeholder="All hallways" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All hallways</SelectItem>
+                        <SelectItem value={ALL_HALLWAYS}>All hallways</SelectItem>
                         {hallways.map((hallway: any) => (
                           <SelectItem key={hallway.id} value={hallway.id}>
                             {hallway.name}

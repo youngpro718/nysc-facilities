@@ -133,8 +133,8 @@ export function FixtureDetailSheet({ fixture, open, onOpenChange, onUpdate }: Fi
                 <p className="font-medium">{fixture.bulb_count}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Scan Count</Label>
-                <p className="font-medium">{fixture.scan_count}</p>
+                <Label className="text-muted-foreground">Times Scanned</Label>
+                <p className="font-medium">{fixture.times_scanned}</p>
               </div>
             </div>
           </div>
