@@ -40,17 +40,6 @@ export const createHistoryLookup = (historyData: any[] = []): Record<string, any
   }, {});
 };
 
-export const createFixturesLookup = (fixturesData: any[] = []): Record<string, any> => {
-  if (!Array.isArray(fixturesData)) return {};
-
-  return fixturesData.reduce((acc: Record<string, any>, fixture: any) => {
-    if (fixture.space_id) {
-      acc[fixture.space_id] = fixture;
-    }
-    return acc;
-  }, {});
-};
-
 export const createConnectionsLookup = (connectionsData: any[] = []): Record<string, any[]> => {
   if (!Array.isArray(connectionsData)) return {};
 

@@ -6,9 +6,9 @@ import { logger } from '@/lib/logger';
 // ============================================================================
 
 export type LightStatus = 'functional' | 'non_functional' | 'maintenance_needed' | 'scheduled_replacement' | 'pending_maintenance';
-export type LightingType = 'standard' | 'emergency' | 'exit_sign' | 'decorative' | 'motion_sensor';
+export type LightingType = 'standard' | 'emergency' | 'motion_sensor';
 export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb';
-export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
+export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
 export type FixtureScanAction = 'functional' | 'bulb_out' | 'ballast_issue' | 'flickering' | 'power_issue' | 'skip';
 export type WalkthroughStatus = 'in_progress' | 'completed' | 'cancelled';
 
@@ -103,6 +103,9 @@ export interface CreateFixturePayload {
 
 export interface UpdateFixtureStatusPayload {
   status: LightStatus;
+  name?: string;
+  type?: LightingType;
+  position?: LightingPosition;
   notes?: string;
   ballast_issue?: boolean;
   requires_electrician?: boolean;
@@ -425,6 +428,9 @@ export async function updateFixtureStatus(fixtureId: string, payload: UpdateFixt
     // Typed loosely so we can write SQL NULL to clear a column — supabase-js
     // drops `undefined` keys from the payload, so `undefined` would NOT clear it.
     const updateData: Record<string, unknown> = { status: payload.status };
+    if (payload.name !== undefined) updateData.name = payload.name;
+    if (payload.type !== undefined) updateData.type = payload.type;
+    if (payload.position !== undefined) updateData.position = payload.position;
     if (payload.notes !== undefined) updateData.notes = payload.notes;
     if (payload.ballast_issue !== undefined) updateData.ballast_issue = payload.ballast_issue;
     if (payload.requires_electrician !== undefined) updateData.requires_electrician = payload.requires_electrician;
@@ -483,6 +489,43 @@ export async function createFixture(payload: CreateFixturePayload) {
     return data as LightingFixture;
   } catch (error) {
     logger.error('Error creating fixture:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create several fixtures in one insert — used by the room setup flow so a
+ * 12-fixture room is one round-trip, not twelve.
+ */
+export async function createFixtures(payloads: CreateFixturePayload[]) {
+  if (payloads.length === 0) return [];
+  try {
+    const { data, error } = await db
+      .from('lighting_fixtures')
+      .insert(payloads.map((payload) => ({
+        name: payload.name,
+        type: payload.type,
+        status: payload.status || 'functional',
+        technology: payload.technology,
+        position: payload.position || 'ceiling',
+        bulb_count: payload.bulb_count || 1,
+        space_id: payload.space_id,
+        space_type: payload.space_type,
+        room_number: payload.room_number,
+        building_id: payload.building_id,
+        floor_id: payload.floor_id,
+        zone_id: payload.zone_id,
+        ballast_issue: payload.ballast_issue || false,
+        requires_electrician: payload.requires_electrician || false,
+        notes: payload.notes,
+        emergency_circuit: payload.emergency_circuit || false,
+      })))
+      .select();
+
+    if (error) throw error;
+    return data as LightingFixture[];
+  } catch (error) {
+    logger.error('Error creating fixtures:', error);
     throw error;
   }
 }

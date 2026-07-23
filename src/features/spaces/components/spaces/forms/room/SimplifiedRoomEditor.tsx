@@ -11,14 +11,11 @@ import { toast } from "sonner";
 import type { RoomFormData } from "./RoomFormSchema";
 import { BasicRoomFields } from "./BasicRoomFields";
 import { ParentRoomField } from "./ParentRoomField";
-import { StatusField } from "./StatusField";
 import { FunctionRealityCheck } from "./wizard/FunctionRealityCheck";
 import { StorageFields } from "./StorageFields";
 import { CapacityFields } from "./wizard/CapacityFields";
-import RoomAccessFields from "./RoomAccessFields";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { GeneralRoomPhotoUpload } from "./wizard/GeneralRoomPhotoUpload";
-import { MaintenanceHealthSummary } from "./wizard/MaintenanceHealthSummary";
 import { AmenitiesFields } from "./AmenitiesFields";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 import { RoomFixturesPanel } from "@/features/lighting/components/RoomFixturesPanel";
@@ -97,7 +94,6 @@ export function SimplifiedRoomEditor({
           </div>
           <BasicRoomFields form={form} />
           <ParentRoomField form={form} floorId={floorId} currentRoomId={roomId} />
-          <StatusField form={form} />
         </div>
 
         <Separator />
@@ -111,16 +107,14 @@ export function SimplifiedRoomEditor({
             <StorageFields form={form} />
           </Section>
 
-          <Section title="Capacity" description="Seating and accessibility limits">
-            <CapacityFields form={form} />
-          </Section>
+          {roomType === RoomTypeEnum.COURTROOM && (
+            <Section title="Capacity" description="Juror and spectator seating for jury selection">
+              <CapacityFields form={form} />
+            </Section>
+          )}
 
           <Section title="Amenities" description="Water coolers and room equipment" defaultOpen>
             <AmenitiesFields form={form} />
-          </Section>
-
-          <Section title="Access" description="Keys, doors, and entry points">
-            <RoomAccessFields form={form} />
           </Section>
 
           <Section title="Photos" description="Document the room visually">
@@ -136,10 +130,6 @@ export function SimplifiedRoomEditor({
               <RoomFixturesPanel roomId={roomId} floorId={floorId} />
             </Section>
           )}
-
-          <Section title="Maintenance" description="Inspection history and schedule">
-            <MaintenanceHealthSummary form={form} roomId={roomId} />
-          </Section>
         </div>
 
         <div className="flex justify-end gap-2 pt-2 border-t">

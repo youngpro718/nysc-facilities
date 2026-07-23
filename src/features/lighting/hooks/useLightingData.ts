@@ -12,6 +12,7 @@ import {
   completeWalkthrough,
   updateFixtureStatus,
   createFixture,
+  createFixtures,
   type LightStatus,
   type StartWalkthroughPayload,
   type RecordFixtureScanPayload,
@@ -196,6 +197,8 @@ export function useUpdateFixtureStatus() {
       // Invalidate all fixture queries
       queryClient.invalidateQueries({ queryKey: lightingKeys.fixtures() });
       queryClient.invalidateQueries({ queryKey: lightingKeys.lightingQueue() });
+      // Rooms table shows per-room fixture counts — keep them fresh
+      queryClient.invalidateQueries({ queryKey: ['rooms-with-lighting-profiles'] });
     },
   });
 }
@@ -222,6 +225,28 @@ export function useCreateFixture() {
       }
       // Invalidate all fixture queries
       queryClient.invalidateQueries({ queryKey: lightingKeys.fixtures() });
+      queryClient.invalidateQueries({ queryKey: ['rooms-with-lighting-profiles'] });
+    },
+  });
+}
+
+/**
+ * Create several fixtures at once (bulk room setup)
+ */
+export function useCreateFixtures() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payloads: CreateFixturePayload[]) => createFixtures(payloads),
+    onSuccess: (data) => {
+      const first = data[0];
+      if (first?.space_id && first?.space_type) {
+        queryClient.invalidateQueries({
+          queryKey: lightingKeys.fixturesBySpace(first.space_id, first.space_type as 'room' | 'hallway'),
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: lightingKeys.fixtures() });
+      queryClient.invalidateQueries({ queryKey: ['rooms-with-lighting-profiles'] });
     },
   });
 }

@@ -128,15 +128,13 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
       .in('room_id', roomIds),
   ]);
   
-  // Lighting and space connections removed
-  const lightingResult = { data: [], error: null };
+  // Space connections removed
   const connectionsResult = { data: [], error: null };
-  
+
   return [
     occupantsResult,
     issuesResult,
     historyResult,
-    lightingResult,
     connectionsResult
   ];
 };

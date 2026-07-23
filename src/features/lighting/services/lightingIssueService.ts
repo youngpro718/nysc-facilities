@@ -115,7 +115,7 @@ export async function countPriorReportsInRoom(
 export async function updateLightingIssueStatus(
   id: string,
   status: LightingIssueStatus,
-  options?: { resolutionNotes?: string },
+  options?: { resolutionNotes?: string; fixtureId?: string | null },
 ): Promise<void> {
   const updates: Record<string, unknown> = {
     status,
@@ -127,4 +127,17 @@ export async function updateLightingIssueStatus(
   }
   const { error } = await supabase.from('lighting_issues').update(updates).eq('id', id);
   if (error) throw error;
+
+  // Resolving an issue means the fixture it pointed to is working again.
+  // Keep the fixture table's status in sync so it doesn't keep showing as
+  // broken after the report that flagged it has been closed out.
+  if (status === 'resolved' && options?.fixtureId) {
+    const { error: fixtureError } = await supabase
+      .from('lighting_fixtures')
+      .update({ status: 'functional', updated_at: new Date().toISOString() })
+      .eq('id', options.fixtureId);
+    if (fixtureError) {
+      console.error('Failed to sync fixture status after resolving issue:', fixtureError);
+    }
+  }
 }

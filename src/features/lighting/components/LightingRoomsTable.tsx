@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Search } from 'lucide-react';
+import { ChevronDown, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { RoomFixturesPanel } from '@features/lighting/components/RoomFixturesPanel';
 import {
   listRoomsWithLightingProfiles,
   upsertRoomLightingProfile,
@@ -40,6 +43,7 @@ export function LightingRoomsTable() {
   const [search, setSearch] = useState('');
   const [buildingFilter, setBuildingFilter] = useState<string>('__all__');
   const [bulbFilter, setBulbFilter] = useState<string>('__all__');
+  const [expandedRoomId, setExpandedRoomId] = useState<string | null>(null);
 
   const { data: rooms = [], isLoading } = useQuery({
     queryKey: ['rooms-with-lighting-profiles'],
@@ -130,6 +134,7 @@ export function LightingRoomsTable() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                  <th className="w-9 px-1 py-2" aria-label="Expand" />
                   <th className="px-2 py-2 font-medium">Room</th>
                   <th className="px-2 py-2 font-medium">Floor / Building</th>
                   <th className="px-2 py-2 font-medium">Fixtures</th>
@@ -143,11 +148,32 @@ export function LightingRoomsTable() {
                   const bulb = r.profile?.bulb_type ?? 'unknown';
                   const ceiling = r.profile?.ceiling_access ?? 'unknown';
                   const led = r.profile?.led_converted ?? false;
+                  const expanded = expandedRoomId === r.id;
                   return (
-                    <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
+                    <Fragment key={r.id}>
+                    <tr className={cn('border-b last:border-0 hover:bg-muted/30', expanded && 'bg-muted/30')}>
+                      <td className="px-1 py-2 align-middle">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setExpandedRoomId(expanded ? null : r.id)}
+                          aria-label={`${expanded ? 'Collapse' : 'Expand'} fixture setup for Room ${r.room_number}`}
+                          aria-expanded={expanded}
+                        >
+                          <ChevronDown className={cn('h-4 w-4 transition-transform', expanded && 'rotate-180')} />
+                        </Button>
+                      </td>
                       <td className="px-2 py-2 align-middle">
-                        <span className="font-medium">Room {r.room_number}</span>
-                        {r.name && <span className="ml-1 text-xs text-muted-foreground">— {r.name}</span>}
+                        <button
+                          type="button"
+                          className="text-left"
+                          onClick={() => setExpandedRoomId(expanded ? null : r.id)}
+                        >
+                          <span className="font-medium">Room {r.room_number}</span>
+                          {r.name && <span className="ml-1 text-xs text-muted-foreground">— {r.name}</span>}
+                        </button>
                       </td>
                       <td className="px-2 py-2 align-middle text-xs text-muted-foreground">
                         {r.floor_name ?? '—'}
@@ -198,6 +224,18 @@ export function LightingRoomsTable() {
                         />
                       </td>
                     </tr>
+                    {expanded && (
+                      <tr className="border-b bg-muted/10">
+                        <td colSpan={7} className="p-0">
+                          {/* sticky-left keeps the panel in the visible area when
+                              the table itself scrolls horizontally on phones */}
+                          <div className="sticky left-0 max-w-[calc(100vw-2rem)] p-3">
+                            <RoomFixturesPanel roomId={r.id} floorId={r.floor_id ?? undefined} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>

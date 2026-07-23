@@ -84,7 +84,6 @@ export interface Room {
   };
   
   // Related data
-  lighting_fixture?: Record<string, unknown>;
   space_connections?: RoomConnection[];
   issues?: unknown[];
   room_history?: unknown[];

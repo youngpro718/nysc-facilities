@@ -33,10 +33,11 @@ interface FixtureDetailSheetProps {
 }
 
 export function FixtureDetailSheet({ fixture, open, onOpenChange, onUpdate }: FixtureDetailSheetProps) {
-  const { isAdmin, isFacilitiesManager } = useAuth();
-  // The Facility Coordinator (facilities_manager) is the role that actually
-  // resolves lighting work, so they get the same edit access as an admin.
-  const canEditStatus = isAdmin || isFacilitiesManager;
+  const { isAdmin, isFacilitiesManager, userRole } = useAuth();
+  // Matches the lighting_fixtures RLS write policy (is_privileged() OR
+  // court_officer) — court officers run walkthroughs and need the same
+  // edit access here that they already have via RoomFixturesPanel.
+  const canEditStatus = isAdmin || isFacilitiesManager || userRole === 'court_officer';
   const [status, setStatus] = useState<LightStatus>(fixture.status);
   const [notes, setNotes] = useState(fixture.notes || '');
   const [isEditing, setIsEditing] = useState(false);

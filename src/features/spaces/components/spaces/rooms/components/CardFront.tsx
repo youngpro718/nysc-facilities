@@ -8,6 +8,7 @@ import { getNormalizedCurrentUse } from "../utils/currentUse";
 import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
+import { RoomStatusQuickSelect } from "./RoomStatusQuickSelect";
 import { WaterCoolerToggle } from "./WaterCoolerToggle";
 import { LightingQuickToggle } from "./LightingQuickToggle";
 import { useChildRoomCount } from "@features/spaces/hooks/useChildRooms";
@@ -266,12 +267,11 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
         {/* Status & Badges */}
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <Badge
-              variant={room.status === 'active' ? 'default' : 'destructive'}
-              className="capitalize"
-            >
-              {room.status}
-            </Badge>
+            <RoomStatusQuickSelect
+              roomId={room.id}
+              status={room.status}
+              canEdit={canManageSpaces}
+            />
             {room.is_storage && (
               <Badge variant="secondary">
                 <ShoppingBag className="h-3 w-3 mr-1" />

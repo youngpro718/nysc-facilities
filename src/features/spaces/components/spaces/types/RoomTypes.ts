@@ -18,7 +18,6 @@ export interface Room {
   occupants?: RoomOccupant[];
   issues?: RoomIssue[];
   history?: RoomHistoryItem[];
-  lightingFixtures?: LightingFixture[];
   connections?: RoomConnection[];
   parentRoomId?: string;
   parentRoomName?: string;
@@ -53,15 +52,6 @@ export interface RoomHistoryItem {
   previousValues?: Record<string, unknown>;
   newValues?: Record<string, unknown>;
   createdAt: string;
-}
-
-export interface LightingFixture {
-  id: string;
-  name: string;
-  status: string;
-  type?: string;
-  position?: string;
-  technology?: string;
 }
 
 export interface RoomConnection {

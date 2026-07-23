@@ -78,7 +78,11 @@ export function LightingIssuesQueue() {
 
   const openCount = issues.filter((i) => i.status !== 'resolved').length;
 
-  const change = async (id: string, status: 'in_progress' | 'resolved', options?: { resolutionNotes?: string }) => {
+  const change = async (
+    id: string,
+    status: 'in_progress' | 'resolved',
+    options?: { resolutionNotes?: string; fixtureId?: string | null },
+  ) => {
     try {
       await updateLightingIssueStatus(id, status, options);
     } catch (e) {
@@ -87,6 +91,9 @@ export function LightingIssuesQueue() {
     }
     await queryClient.invalidateQueries({ queryKey: ['lighting-issues'] });
     await queryClient.invalidateQueries({ queryKey: ['lighting-issues-open-count'] });
+    if (status === 'resolved' && options?.fixtureId) {
+      await queryClient.invalidateQueries({ queryKey: ['lighting'] });
+    }
     toast.success(status === 'resolved' ? 'Issue resolved.' : 'Marked in progress.');
     return true;
   };
@@ -96,6 +103,7 @@ export function LightingIssuesQueue() {
     setResolving(true);
     const ok = await change(resolveTarget.id, 'resolved', {
       resolutionNotes: resolveNotes.trim() || undefined,
+      fixtureId: resolveTarget.fixture_id,
     });
     setResolving(false);
     if (ok) {

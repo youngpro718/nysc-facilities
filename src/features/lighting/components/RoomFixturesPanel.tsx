@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useSpaceFixtures, useUpdateFixtureStatus, useCreateFixture, lightingKeys } from "../hooks/useLightingData";
+import { useSpaceFixtures, useUpdateFixtureStatus, useCreateFixtures, lightingKeys } from "../hooks/useLightingData";
 import { nextFixtureLabels } from "../services/lightingService";
-import type { LightStatus, LightingType, UpdateFixtureStatusPayload } from "../services/lightingService";
+import type { LightStatus, LightingType, LightingPosition, UpdateFixtureStatusPayload } from "../services/lightingService";
 import { getErrorMessage } from "@/lib/errorUtils";
 
 interface RoomFixturesPanelProps {
@@ -34,12 +34,27 @@ const STATUS_OPTIONS: { value: LightStatus; label: string }[] = [
   { value: "maintenance_needed", label: "Maintenance needed" },
 ];
 
+const POSITION_OPTIONS: { value: LightingPosition; label: string }[] = [
+  { value: "ceiling", label: "Ceiling" },
+  { value: "recessed", label: "Recessed" },
+  { value: "wall", label: "Wall" },
+  { value: "floor", label: "Floor" },
+  { value: "desk", label: "Desk" },
+];
+
+const TYPE_OPTIONS: { value: LightingType; label: string }[] = [
+  { value: "standard", label: "Standard" },
+  { value: "emergency", label: "Emergency" },
+  { value: "motion_sensor", label: "Motion sensor" },
+];
+
 export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
   const queryClient = useQueryClient();
   const { data: fixtures = [], isLoading } = useSpaceFixtures(roomId, "room");
-  const createFixture = useCreateFixture();
+  const createFixtures = useCreateFixtures();
   const updateStatus = useUpdateFixtureStatus();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [addCount, setAddCount] = useState(1);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
   const { data: floor } = useQuery({
@@ -63,20 +78,26 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
   );
 
   const handleAdd = async () => {
+    const count = Math.max(1, Math.min(50, addCount));
     try {
-      const [label] = nextFixtureLabels(fixtures.map((f) => f.name));
-      await createFixture.mutateAsync({
+      const labels = nextFixtureLabels(fixtures.map((f) => f.name), count);
+      await createFixtures.mutateAsync(labels.map((label) => ({
         name: label,
         type: "standard" as LightingType,
-        status: "functional",
-        position: "ceiling",
+        status: "functional" as LightStatus,
+        position: "ceiling" as LightingPosition,
         bulb_count: 1,
         space_id: roomId,
         space_type: "room",
         floor_id: floorId,
         building_id: floor?.building_id ?? undefined,
-      });
-      toast.success(`Added fixture ${label}`);
+      })));
+      toast.success(
+        labels.length === 1
+          ? `Added fixture ${labels[0]}`
+          : `Added ${labels.length} fixtures (${labels[0]}–${labels[labels.length - 1]})`
+      );
+      setAddCount(1);
     } catch (err) {
       toast.error(`Add failed: ${getErrorMessage(err)}`);
     }
@@ -109,6 +130,7 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: lightingKeys.fixturesBySpace(roomId, "room") });
       queryClient.invalidateQueries({ queryKey: lightingKeys.fixtures() });
+      queryClient.invalidateQueries({ queryKey: ["rooms-with-lighting-profiles"] });
       toast.success(`Removed fixture ${name}`);
     } catch (err) {
       toast.error(`Remove failed: ${getErrorMessage(err)}`);
@@ -126,17 +148,28 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
             Label each fixture so issues can be reported against a specific one.
           </p>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={handleAdd}
-          disabled={createFixture.isPending}
-          className="min-h-[44px] shrink-0"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Add fixture
-        </Button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Input
+            type="number"
+            min={1}
+            max={50}
+            value={addCount}
+            onChange={(e) => setAddCount(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+            className="h-11 w-16 text-center"
+            aria-label="Number of fixtures to add"
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleAdd}
+            disabled={createFixtures.isPending}
+            className="min-h-[44px]"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            {addCount > 1 ? `Add ${addCount}` : "Add fixture"}
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -144,7 +177,8 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
       ) : sorted.length === 0 ? (
         <Card>
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            No fixtures tracked yet. Tap <span className="font-medium">Add fixture</span> to start (A1, A2, A3…).
+            No fixtures tracked yet. Enter how many this room has and tap{" "}
+            <span className="font-medium">Add</span> — they'll be labeled A1, A2, A3… and you can rename them after.
           </CardContent>
         </Card>
       ) : (
@@ -199,6 +233,21 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
                   </div>
                   <CollapsibleContent className="border-t bg-muted/20 p-3 space-y-3">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-1 sm:col-span-2">
+                        <Label htmlFor={`nm-${f.id}`} className="text-xs">Label</Label>
+                        <Input
+                          id={`nm-${f.id}`}
+                          defaultValue={f.name}
+                          placeholder="e.g. Above bench, Window side"
+                          className="h-9"
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            if (v && v !== f.name) {
+                              patch(f.id, { status: (f.status ?? "functional") as LightStatus, name: v });
+                            }
+                          }}
+                        />
+                      </div>
                       <div className="space-y-1">
                         <Label htmlFor={`bc-${f.id}`} className="text-xs">Bulbs in fixture</Label>
                         <Input
@@ -215,6 +264,38 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
                             }
                           }}
                         />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Position</Label>
+                        <Select
+                          value={f.position ?? "ceiling"}
+                          onValueChange={(v) =>
+                            patch(f.id, { status: (f.status ?? "functional") as LightStatus, position: v as LightingPosition })
+                          }
+                        >
+                          <SelectTrigger className="h-9" aria-label={`Position for ${f.name}`}><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {POSITION_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Type</Label>
+                        <Select
+                          value={f.type ?? "standard"}
+                          onValueChange={(v) =>
+                            patch(f.id, { status: (f.status ?? "functional") as LightStatus, type: v as LightingType })
+                          }
+                        >
+                          <SelectTrigger className="h-9" aria-label={`Type for ${f.name}`}><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {TYPE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
                         <Label htmlFor={`bal-${f.id}`} className="text-xs">Ballast issue</Label>

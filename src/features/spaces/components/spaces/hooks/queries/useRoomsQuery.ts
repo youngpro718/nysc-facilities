@@ -5,11 +5,10 @@ import { useToast } from "@shared/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { fetchRoomsData, fetchRelatedRoomData } from "./api/roomQueries";
 import { transformRoomData } from "./transformers/roomTransformers";
-import { 
-  createOccupantsLookup, 
-  createIssuesLookup, 
-  createHistoryLookup, 
-  createFixturesLookup,
+import {
+  createOccupantsLookup,
+  createIssuesLookup,
+  createHistoryLookup,
   createConnectionsLookup
 } from "./utils/roomDataUtils";
 
@@ -45,16 +44,14 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         { data: occupantsData, error: occupantsError },
         { data: issuesData, error: issuesError },
         { data: historyData, error: historyError },
-        { data: fixturesData, error: fixturesError },
         { data: connectionsData, error: connectionsError }
       ] = await fetchRelatedRoomData(roomsData.map(room => room.id));
 
-      if (occupantsError || issuesError || historyError || fixturesError || connectionsError) {
+      if (occupantsError || issuesError || historyError || connectionsError) {
         logger.warn('Some related room data failed to load (continuing with partial data):', {
           occupantsError,
           issuesError,
           historyError,
-          fixturesError,
           connectionsError
         });
       }
@@ -65,13 +62,11 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
       const occupantsByRoomId = createOccupantsLookup(occupantsData || []);
       const issuesByRoomId = createIssuesLookup(issuesData || []);
       const historyByRoomId = createHistoryLookup(historyData || []);
-      const fixturesByRoomId = createFixturesLookup(fixturesData || []);
       const connectionsByRoomId = createConnectionsLookup(connectionsData || []);
 
       // Transform the data
       const transformedRooms = transformRoomData(
         roomsData,
-        fixturesByRoomId,
         issuesByRoomId,
         historyByRoomId,
         occupantsByRoomId,
