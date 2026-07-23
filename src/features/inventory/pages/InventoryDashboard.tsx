@@ -160,7 +160,7 @@ export const InventoryDashboard = () => {
           </PageHeader>
 
           {/* Quick Links */}
-          <div className="flex flex-wrap items-center justify-end gap-2 p-3 bg-muted/50 rounded-lg border" data-tour="inventory-search">
+          <div className="flex flex-wrap items-center justify-end gap-2 p-3 bg-muted/50 rounded-lg border" data-tour="inventory-quick-links">
             {lowStockCount > 0 && (
               <Button
                 variant="ghost"

@@ -15,6 +15,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-07-23",
+    title: "Furniture condition tracking, inventory rollup, and export fixes",
+    highlights: [
+      "Furniture items can now be tracked as New or Used, with a badge on the item and condition-aware picking when fulfilling a supply order — this only applies to Furniture, not consumables like office supplies.",
+      "Inventory list has an opt-in \"Group by item\" view that rolls same-name items (e.g. file cabinets in several rooms) into one summary line, expandable to the individual room rows underneath.",
+      "New grouped Excel inventory report (banners per room, subtotals, grand total) alongside the original flat CSV export.",
+      "Fixed inventory and inventory-audit exports counting soft-deleted items — a toner code could show up 2-3x in an export with the item count roughly doubled.",
+      "Fixed Dev Mode role preview not actually changing permissions in production — picking a role would navigate you there but permissions stayed unchanged.",
+      "Removed the non-functional quick-search bar from the Inventory header (it never filtered anything); the Stock tab's own search still works.",
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-07-21",
     title: "Lighting outage reporting, notification bell fix, and permission cleanup",

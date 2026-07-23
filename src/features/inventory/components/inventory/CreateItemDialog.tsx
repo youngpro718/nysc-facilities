@@ -21,6 +21,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
+import { categoryTracksCondition } from "@features/inventory/utils/condition";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 type Category = {
@@ -93,6 +94,9 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
     staleTime: QUERY_CONFIG.stale.long,
     gcTime: QUERY_CONFIG.gc.long,
   });
+
+  const selectedCategoryName = categories?.find((c) => c.id === formData.category_id)?.name;
+  const showCondition = categoryTracksCondition(selectedCategoryName);
 
   const { data: storageRooms } = useQuery({
     queryKey: QUERY_KEYS.storageRooms(),
@@ -254,28 +258,6 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Condition</Label>
-              <ToggleGroup
-                type="single"
-                value={formData.condition}
-                onValueChange={(value) => value && setFormData({ ...formData, condition: value as "new" | "used" })}
-                className="justify-start"
-              >
-                <ToggleGroupItem value="new" aria-label="New" className="px-4">
-                  New
-                </ToggleGroupItem>
-                <ToggleGroupItem value="used" aria-label="Used" className="px-4">
-                  Used
-                </ToggleGroupItem>
-              </ToggleGroup>
-              <p className="text-xs text-muted-foreground">
-                If a room already has stock of this item in a different condition, add this
-                as its own entry rather than mixing it in — that's what keeps give-away
-                accurate later.
-              </p>
-            </div>
-
             {/* Packaging — counts only, no label naming. Auto-falls back to "units"/"pack"/"case" in displays. */}
             <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
               <p className="text-sm font-medium">Packaging</p>
@@ -365,7 +347,14 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
               <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                onValueChange={(value) => {
+                  const nextTracksCondition = categoryTracksCondition(categories?.find((c) => c.id === value)?.name);
+                  setFormData({
+                    ...formData,
+                    category_id: value,
+                    condition: nextTracksCondition ? formData.condition : "new",
+                  });
+                }}
               >
                 <SelectTrigger aria-label="Inventory category">
                   <SelectValue placeholder="Select a category" />
@@ -379,6 +368,30 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
                 </SelectContent>
               </Select>
             </div>
+
+            {showCondition && (
+              <div className="space-y-2">
+                <Label>Condition</Label>
+                <ToggleGroup
+                  type="single"
+                  value={formData.condition}
+                  onValueChange={(value) => value && setFormData({ ...formData, condition: value as "new" | "used" })}
+                  className="justify-start"
+                >
+                  <ToggleGroupItem value="new" aria-label="New" className="px-4">
+                    New
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="used" aria-label="Used" className="px-4">
+                    Used
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <p className="text-xs text-muted-foreground">
+                  If a room already has stock of this item in a different condition, add this
+                  as its own entry rather than mixing it in — that's what keeps give-away
+                  accurate later.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Location */}

@@ -179,8 +179,8 @@ export const inventoryTour: Step[] = [
     disableBeacon: true,
   },
   {
-    target: '[data-tour="inventory-search"]',
-    content: 'Search for items by name or category. The search works across all fields.',
+    target: '[data-tour="inventory-quick-links"]',
+    content: 'Jump straight to items needing attention or recent activity from here. The Stock tab below has its own search.',
     placement: 'bottom',
     disableBeacon: true,
   },

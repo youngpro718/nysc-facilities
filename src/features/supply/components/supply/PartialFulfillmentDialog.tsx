@@ -332,6 +332,10 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
                 const selectedSource = sources.find((s) => s.id === item.source_item_id);
                 const currentStock = selectedSource?.quantity ?? item.inventory_items?.quantity ?? 0;
                 const isInsufficient = currentStock < item.quantity_requested;
+                // Only worth surfacing when stock is actually split new/used —
+                // most items (pens, paper, etc.) never have a "used" row, so
+                // showing "(New)" everywhere would just be noise.
+                const hasConditionSplit = sources.some((s) => s.condition === 'used');
 
                 return (
                   <div
@@ -354,7 +358,13 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
                           {!readOnly && <span className="text-xs">|</span>}
                           {!readOnly && <span className={`text-xs ${isInsufficient ? 'text-destructive' : 'text-muted-foreground'}`}>
                             In stock: {currentStock}
-                            {selectedSource ? ` (${selectedSource.condition === 'used' ? 'Used' : 'New'}${sources.length > 1 ? ` — ${selectedSource.roomLabel}` : ''})` : ''}
+                            {selectedSource && (() => {
+                              const parts = [
+                                ...(hasConditionSplit ? [selectedSource.condition === 'used' ? 'Used' : 'New'] : []),
+                                ...(sources.length > 1 ? [selectedSource.roomLabel] : []),
+                              ];
+                              return parts.length > 0 ? ` (${parts.join(' — ')})` : '';
+                            })()}
                           </span>}
                         </div>
                       </div>
@@ -410,7 +420,7 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
                           <SelectContent>
                             {sources.map((source) => (
                               <SelectItem key={source.id} value={source.id}>
-                                {source.roomLabel} · {source.condition === 'used' ? 'Used' : 'New'} · {source.quantity} in stock
+                                {source.roomLabel}{hasConditionSplit ? ` · ${source.condition === 'used' ? 'Used' : 'New'}` : ''} · {source.quantity} in stock
                               </SelectItem>
                             ))}
                           </SelectContent>

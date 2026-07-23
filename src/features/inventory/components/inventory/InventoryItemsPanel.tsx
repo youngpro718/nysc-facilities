@@ -43,6 +43,7 @@ import { getGenericItemImage } from "@/utils/inventoryImages";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { isLowStock, isOutOfStock } from "@features/inventory/utils/stockStatus";
 import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
+import { categoryTracksCondition } from "@features/inventory/utils/condition";
 type InventoryItem = {
   id: string;
   name: string;
@@ -252,6 +253,7 @@ export const InventoryItemsPanel = () => {
     newQuantity: number;
     usedQuantity: number;
     roomIds: Set<string>;
+    tracksCondition: boolean;
   };
 
   const itemGroups = useMemo<ItemGroup[]>(() => {
@@ -270,6 +272,7 @@ export const InventoryItemsPanel = () => {
           newQuantity: 0,
           usedQuantity: 0,
           roomIds: new Set(),
+          tracksCondition: categoryTracksCondition(categoriesById.get(it.category_id)?.name),
         };
         map.set(key, group);
       }
@@ -281,7 +284,7 @@ export const InventoryItemsPanel = () => {
       if (it.storage_room_id) group.roomIds.add(it.storage_room_id);
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [groupByItem, groupedRows]);
+  }, [groupByItem, groupedRows, categoriesById]);
 
   const toggleGroupExpanded = (key: string) => {
     setExpandedGroups((prev) => {
@@ -559,7 +562,7 @@ export const InventoryItemsPanel = () => {
         const room = roomsById.get(it.storage_room_id);
         return {
           Name: it.name,
-          Condition: it.condition === "used" ? "Used" : "New",
+          Condition: categoryTracksCondition(cat?.name) ? (it.condition === "used" ? "Used" : "New") : "",
           Quantity: it.quantity,
           Unit: it.unit || "",
           Minimum: it.minimum_quantity,
@@ -691,7 +694,7 @@ export const InventoryItemsPanel = () => {
 
           const row = ws.addRow({
             name: it.name,
-            condition: it.condition === "used" ? "Used" : "New",
+            condition: categoryTracksCondition(cat?.name) ? (it.condition === "used" ? "Used" : "New") : "",
             category: cat?.name ?? "",
             quantity: it.quantity,
             unit: it.unit || "",
@@ -847,7 +850,9 @@ export const InventoryItemsPanel = () => {
         // No Room column (or no match): default to the room currently selected
         // in the filter, so importing "into" a storage room actually lands there.
         if (!storage_room_id && selectedRoom && selectedRoom !== "all") storage_room_id = selectedRoom;
-        const condition = /^used$/i.test((row.Condition ?? row.condition ?? "").trim()) ? "used" : "new";
+        const condition = categoryTracksCondition(catName) && /^used$/i.test((row.Condition ?? row.condition ?? "").trim())
+          ? "used"
+          : "new";
 
         const key = existingKey(name, storage_room_id, condition);
         const existingId = existingMap.get(key);
@@ -1219,9 +1224,15 @@ export const InventoryItemsPanel = () => {
                         <Badge className={stockStatus.color}>
                           {stockStatus.label}
                         </Badge>
-                        <Badge variant={item.condition === "used" ? "secondary" : "outline"}>
-                          {item.condition === "used" ? "Used" : "New"}
-                        </Badge>
+                        {(() => {
+                          const cat = categoriesById.get(item.category_id);
+                          if (!categoryTracksCondition(cat?.name)) return null;
+                          return (
+                            <Badge variant={item.condition === "used" ? "secondary" : "outline"}>
+                              {item.condition === "used" ? "Used" : "New"}
+                            </Badge>
+                          );
+                        })()}
                         {(() => {
                           const cat = categoriesById.get(item.category_id);
                           if (!cat) return null;
@@ -1373,7 +1384,9 @@ export const InventoryItemsPanel = () => {
                         {group.totalQuantity} total
                         {group.totalMinimum > 0 ? ` (min ${group.totalMinimum})` : ""}
                       </div>
-                      <span>{group.newQuantity} New, {group.usedQuantity} Used</span>
+                      {group.tracksCondition && (
+                        <span>{group.newQuantity} New, {group.usedQuantity} Used</span>
+                      )}
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
                         {group.roomIds.size} room{group.roomIds.size === 1 ? "" : "s"}
@@ -1396,9 +1409,11 @@ export const InventoryItemsPanel = () => {
                               key={it.id}
                               className="flex flex-wrap items-center gap-3 rounded-lg border p-2.5 text-sm"
                             >
-                              <Badge variant={it.condition === "used" ? "secondary" : "outline"} className="shrink-0">
-                                {it.condition === "used" ? "Used" : "New"}
-                              </Badge>
+                              {group.tracksCondition && (
+                                <Badge variant={it.condition === "used" ? "secondary" : "outline"} className="shrink-0">
+                                  {it.condition === "used" ? "Used" : "New"}
+                                </Badge>
+                              )}
                               <span className="flex items-center gap-1 text-muted-foreground shrink-0">
                                 <MapPin className="h-3.5 w-3.5" />
                                 {room ? `${room.name}${room.room_number ? ` (${room.room_number})` : ""}` : "No room set"}
