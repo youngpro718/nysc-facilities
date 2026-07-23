@@ -56,6 +56,7 @@ interface StockSource {
   id: string;
   quantity: number;
   roomLabel: string;
+  condition: string;
 }
 
 interface PartialFulfillmentDialogProps {
@@ -106,7 +107,7 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
       const idList = orderedInventoryIds.join(',');
       const { data: rows, error } = await supabase
         .from('inventory_items')
-        .select('id, quantity, status, storage_room_id, catalog_item_id')
+        .select('id, quantity, status, storage_room_id, catalog_item_id, condition')
         .or(`id.in.(${idList}),catalog_item_id.in.(${idList})`);
       if (error) throw error;
 
@@ -129,7 +130,8 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
         const listingId = (row.catalog_item_id as string | null) ?? row.id;
         if (!orderedInventoryIds.includes(listingId) && !orderedInventoryIds.includes(row.id)) continue;
         const room = row.storage_room_id ? roomsById.get(row.storage_room_id) : undefined;
-        const roomLabel = room
+        const condition = row.condition === 'used' ? 'used' : 'new';
+        const baseLabel = room
           ? room.name && room.name !== room.room_number
             ? `Room ${room.room_number} — ${room.name}`
             : `Room ${room.room_number}`
@@ -138,7 +140,8 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
         (bySource[key] ||= []).push({
           id: row.id,
           quantity: row.quantity ?? 0,
-          roomLabel,
+          roomLabel: baseLabel,
+          condition,
         });
       }
       for (const list of Object.values(bySource)) {
@@ -351,7 +354,7 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
                           {!readOnly && <span className="text-xs">|</span>}
                           {!readOnly && <span className={`text-xs ${isInsufficient ? 'text-destructive' : 'text-muted-foreground'}`}>
                             In stock: {currentStock}
-                            {selectedSource && sources.length > 1 ? ` (${selectedSource.roomLabel})` : ''}
+                            {selectedSource ? ` (${selectedSource.condition === 'used' ? 'Used' : 'New'}${sources.length > 1 ? ` — ${selectedSource.roomLabel}` : ''})` : ''}
                           </span>}
                         </div>
                       </div>
@@ -407,7 +410,7 @@ export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: P
                           <SelectContent>
                             {sources.map((source) => (
                               <SelectItem key={source.id} value={source.id}>
-                                {source.roomLabel} · {source.quantity} in stock
+                                {source.roomLabel} · {source.condition === 'used' ? 'Used' : 'New'} · {source.quantity} in stock
                               </SelectItem>
                             ))}
                           </SelectContent>

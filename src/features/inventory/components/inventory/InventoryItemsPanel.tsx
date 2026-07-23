@@ -65,6 +65,7 @@ type InventoryItem = {
   created_at: string;
   updated_at: string;
   requires_justification: boolean | null;
+  condition: string | null;
 };
 
 type InventoryCategory = {
@@ -469,6 +470,7 @@ export const InventoryItemsPanel = () => {
         const room = roomsById.get(it.storage_room_id);
         return {
           Name: it.name,
+          Condition: it.condition === "used" ? "Used" : "New",
           Quantity: it.quantity,
           Unit: it.unit || "",
           Minimum: it.minimum_quantity,
@@ -552,6 +554,7 @@ export const InventoryItemsPanel = () => {
 
       const columns: { header: string; key: string; width: number }[] = [
         { header: "Item", key: "name", width: 34 },
+        { header: "Condition", key: "condition", width: 12 },
         { header: "Category", key: "category", width: 22 },
         { header: "Quantity", key: "quantity", width: 12 },
         { header: "Unit", key: "unit", width: 12 },
@@ -599,6 +602,7 @@ export const InventoryItemsPanel = () => {
 
           const row = ws.addRow({
             name: it.name,
+            condition: it.condition === "used" ? "Used" : "New",
             category: cat?.name ?? "",
             quantity: it.quantity,
             unit: it.unit || "",
@@ -607,15 +611,15 @@ export const InventoryItemsPanel = () => {
           });
           row.eachCell({ includeEmpty: true }, (cell) => { cell.border = allBorders; });
           if (lowStock) {
-            row.getCell(3).font = { bold: true, color: { argb: lowStockText } };
+            row.getCell(4).font = { bold: true, color: { argb: lowStockText } };
           }
         }
 
         grandItems += items.length;
         grandQuantity += roomQuantity;
 
-        const subtotalRow = ws.addRow({ name: "", category: "", quantity: roomQuantity, unit: "", minimum: "", updated: "" });
-        ws.mergeCells(subtotalRow.number, 1, subtotalRow.number, 2);
+        const subtotalRow = ws.addRow({ name: "", condition: "", category: "", quantity: roomQuantity, unit: "", minimum: "", updated: "" });
+        ws.mergeCells(subtotalRow.number, 1, subtotalRow.number, 3);
         subtotalRow.getCell(1).value = `${items.length} item${items.length === 1 ? "" : "s"} — Subtotal`;
         for (let c = 1; c <= colCount; c++) {
           const cell = subtotalRow.getCell(c);
@@ -625,8 +629,8 @@ export const InventoryItemsPanel = () => {
         }
       }
 
-      const totalRow = ws.addRow({ name: "", category: "", quantity: grandQuantity, unit: "", minimum: "", updated: "" });
-      ws.mergeCells(totalRow.number, 1, totalRow.number, 2);
+      const totalRow = ws.addRow({ name: "", condition: "", category: "", quantity: grandQuantity, unit: "", minimum: "", updated: "" });
+      ws.mergeCells(totalRow.number, 1, totalRow.number, 3);
       totalRow.getCell(1).value = `${grandItems} item${grandItems === 1 ? "" : "s"} — GRAND TOTAL`;
       for (let c = 1; c <= colCount; c++) {
         const cell = totalRow.getCell(c);
@@ -706,19 +710,23 @@ export const InventoryItemsPanel = () => {
           .filter(([k]) => k.length > 0)
       );
 
-      // Preload existing items by (name+storage_room_id) so we upsert instead of duplicating.
-      // Excludes inactive (soft-deleted) rows — matching against one would silently
-      // bump a dead row's quantity instead of the live item with the same name/room,
-      // without ever surfacing it (the list and export both hide inactive status).
+      // Preload existing items by (name+storage_room_id+condition) so we upsert instead of
+      // duplicating. Condition is part of the key because the same name/room can now hold
+      // separate "new" and "used" rows on purpose. Excludes inactive (soft-deleted) rows —
+      // matching against one would silently bump a dead row's quantity instead of the live
+      // item with the same name/room, without ever surfacing it (the list and export both
+      // hide inactive status).
       const { data: existingRows, error: existingErr } = await supabase
         .from("inventory_items")
-        .select("id,name,storage_room_id")
+        .select("id,name,storage_room_id,condition")
         .neq("status", "inactive")
         .range(0, 9999);
       if (existingErr) throw existingErr;
-      const existingKey = (name: string, roomId: string | null) => `${name.trim().toLowerCase()}::${roomId ?? ""}`;
+      const existingKey = (name: string, roomId: string | null, condition: string) =>
+        `${name.trim().toLowerCase()}::${roomId ?? ""}::${condition}`;
       const existingMap = new Map(
-        (existingRows ?? []).map((r: { id: string; name: string; storage_room_id: string | null }) => [existingKey(r.name, r.storage_room_id), r.id])
+        (existingRows ?? []).map((r: { id: string; name: string; storage_room_id: string | null; condition: string | null }) =>
+          [existingKey(r.name, r.storage_room_id, r.condition === "used" ? "used" : "new"), r.id])
       );
 
       let inserted = 0;
@@ -750,8 +758,9 @@ export const InventoryItemsPanel = () => {
         // No Room column (or no match): default to the room currently selected
         // in the filter, so importing "into" a storage room actually lands there.
         if (!storage_room_id && selectedRoom && selectedRoom !== "all") storage_room_id = selectedRoom;
+        const condition = /^used$/i.test((row.Condition ?? row.condition ?? "").trim()) ? "used" : "new";
 
-        const key = existingKey(name, storage_room_id);
+        const key = existingKey(name, storage_room_id, condition);
         const existingId = existingMap.get(key);
 
         if (existingId) {
@@ -766,6 +775,7 @@ export const InventoryItemsPanel = () => {
           const payload: Record<string, unknown> = {
             name,
             quantity,
+            condition,
             status: "active",
           };
           if (minimum_quantity !== null) payload.minimum_quantity = minimum_quantity;
@@ -1106,6 +1116,9 @@ export const InventoryItemsPanel = () => {
                         <CardTitle className="text-lg break-words">{item.name}</CardTitle>
                         <Badge className={stockStatus.color}>
                           {stockStatus.label}
+                        </Badge>
+                        <Badge variant={item.condition === "used" ? "secondary" : "outline"}>
+                          {item.condition === "used" ? "Used" : "New"}
                         </Badge>
                         {(() => {
                           const cat = categoriesById.get(item.category_id);

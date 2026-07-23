@@ -2773,6 +2773,7 @@ export type Database = {
           case_size: number | null
           catalog_item_id: string | null
           category_id: string | null
+          condition: string
           created_at: string | null
           description: string | null
           id: string
@@ -2801,6 +2802,7 @@ export type Database = {
           case_size?: number | null
           catalog_item_id?: string | null
           category_id?: string | null
+          condition?: string
           created_at?: string | null
           description?: string | null
           id?: string
@@ -2829,6 +2831,7 @@ export type Database = {
           case_size?: number | null
           catalog_item_id?: string | null
           category_id?: string | null
+          condition?: string
           created_at?: string | null
           description?: string | null
           id?: string
