@@ -128,10 +128,17 @@ export function MobileKeyRow({ slot, onOpen, onPrimaryAction }: MobileKeyRowProp
 
   return (
     <div className="rounded-md border bg-card overflow-hidden">
-      <button
-        type="button"
-        className="w-full flex items-center gap-3 p-3 text-left"
+      <div
+        role="button"
+        tabIndex={0}
+        className="w-full flex items-center gap-3 p-3 text-left cursor-pointer touch-manipulation focus:outline-none focus-visible:bg-accent/50"
         onClick={() => onOpen(slot)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen(slot);
+          }
+        }}
       >
         {/* Key icon */}
         <div
@@ -194,7 +201,7 @@ export function MobileKeyRow({ slot, onOpen, onPrimaryAction }: MobileKeyRowProp
             {styles.actionLabel}
           </Button>
         </div>
-      </button>
+      </div>
 
       {showSecondary && (
         <div className="px-4 py-2 border-t border-border/60 bg-muted/20 text-xs text-muted-foreground truncate">
