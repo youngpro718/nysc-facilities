@@ -3,15 +3,29 @@ import { logger } from '@/lib/logger';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { QUERY_CONFIG } from '@/config';
+import { QUERY_KEYS } from '@/lib/queryKeys';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, AlertTriangle, ArrowRight, PackagePlus } from "lucide-react";
+import { Package, AlertTriangle, ArrowRight, PackagePlus, MapPin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSearchParams } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { isLowStock, isOutOfStock, needsAttention } from "@features/inventory/utils/stockStatus";
 import { StockAdjustmentDialog } from "@features/inventory/components/inventory/StockAdjustmentDialog";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { categoryTracksCondition } from "@features/inventory/utils/condition";
+
+type OverviewItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  minimum_quantity: number;
+  unit: string | null;
+  category_id: string | null;
+  storage_room_id: string | null;
+  condition: string | null;
+};
 
 type LowStockItem = {
   id: string;
@@ -20,6 +34,8 @@ type LowStockItem = {
   minimum_quantity: number;
   unit?: string | null;
   category_name?: string | null;
+  room_label?: string | null;
+  condition?: string | null;
 };
 
 export const InventoryOverviewPanel = () => {
@@ -40,17 +56,19 @@ export const InventoryOverviewPanel = () => {
     }
   }, [range]);
 
-  // Fetch all items for stats + low stock in one query
-  const { data: allItems } = useQuery({
+  // Single fetch of all active items — feeds the top-line stats AND the
+  // Action Needed list below, instead of two separate round-trips pulling
+  // the same rows.
+  const { data: allItems, isError: itemsIsError, error: itemsError } = useQuery({
     queryKey: ["inventory-overview-items"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select("id, name, quantity, minimum_quantity, category_id")
+        .select("id, name, quantity, minimum_quantity, unit, category_id, storage_room_id, condition")
         .eq("status", "active")
         .order("quantity", { ascending: true });
       if (error) throw error;
-      return data || [];
+      return (data || []) as OverviewItem[];
     },
     staleTime: 3 * 60 * 1000,
     gcTime: QUERY_CONFIG.gc.medium,
@@ -58,8 +76,42 @@ export const InventoryOverviewPanel = () => {
     retry: 2,
   });
 
+  // Category/room lookups — shares a cache key with the Stock tab, so
+  // switching tabs doesn't refetch what's already loaded.
+  const { data: categories } = useQuery({
+    queryKey: ["inventory-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("inventory_categories").select("id,name");
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Every inventory item lives in a storage room, so that's the only set
+  // needed for room-label lookups here (also matches the filtered list used
+  // by the Stock tab and the create/edit item forms).
+  const { data: rooms } = useQuery({
+    queryKey: QUERY_KEYS.storageRooms(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("rooms").select("id,name,room_number").eq("is_storage", true);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const categoriesById = useMemo(
+    () => new Map((categories ?? []).map((c: { id: string; name: string }) => [c.id, c.name])),
+    [categories],
+  );
+  const roomsById = useMemo(
+    () => new Map((rooms ?? []).map((r: { id: string; name: string; room_number: string | null }) => [r.id, r])),
+    [rooms],
+  );
+
   // Most Used Items
-  const { data: mostUsedItems } = useQuery({
+  const { data: mostUsedItems, isError: mostUsedIsError } = useQuery({
     queryKey: ["inventory-most-used", startDate.toISOString()],
     queryFn: async () => {
       const { data: txs, error } = await supabase
@@ -100,50 +152,43 @@ export const InventoryOverviewPanel = () => {
     retry: 2,
   });
 
-  // Low stock items with category names
-  const { data: lowStockItems } = useQuery({
-    queryKey: ["low-stock-overview"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("inventory_items")
-        .select("id, name, quantity, minimum_quantity, unit, category_id")
-        .eq("status", "active")
-        .order("quantity", { ascending: true });
-      if (error) throw error;
-
-      const filtered = (data || []).filter(needsAttention);
-
-      const categoryIds = Array.from(new Set(filtered.map(i => i.category_id).filter(Boolean))) as string[];
-      const categoriesById = new Map<string, string>();
-      if (categoryIds.length > 0) {
-        const { data: cats } = await supabase
-          .from("inventory_categories")
-          .select("id,name")
-          .in("id", categoryIds);
-        for (const c of cats || []) categoriesById.set(c.id, c.name);
-      }
-
-      return filtered.slice(0, 5).map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        category_name: item.category_id ? categoriesById.get(item.category_id) ?? null : null,
-      })) as LowStockItem[];
-    },
-    staleTime: 2 * 60 * 1000,
-    gcTime: QUERY_CONFIG.gc.short,
-    refetchOnWindowFocus: false,
-    retry: 2,
-  });
-
   // Computed stats — centralized
   const totalItems = allItems?.length ?? 0;
   const outOfStock = allItems?.filter(isOutOfStock).length ?? 0;
   const lowStockCount = allItems?.filter(isLowStock).length ?? 0;
-  const totalLowStockFromQuery = lowStockItems?.length ?? 0;
   const hasActionItems = outOfStock > 0 || lowStockCount > 0;
+
+  // Top 5 items needing attention, enriched with room + condition so staff
+  // know exactly where to restock, not just what — the same item name can
+  // be fine in one room and out in another.
+  const lowStockItems = useMemo<LowStockItem[]>(() => {
+    if (!allItems) return [];
+    return allItems
+      .filter(needsAttention)
+      .slice(0, 5)
+      .map((item) => {
+        const room = item.storage_room_id ? roomsById.get(item.storage_room_id) : undefined;
+        const roomLabel = room
+          ? `${room.name}${room.room_number ? ` (${room.room_number})` : ""}`
+          : null;
+        const categoryName = item.category_id ? categoriesById.get(item.category_id) ?? null : null;
+        return {
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          minimum_quantity: item.minimum_quantity,
+          unit: item.unit,
+          category_name: categoryName,
+          room_label: roomLabel,
+          // Only Furniture tracks new/used — showing "New" on every other
+          // low-stock alert would just be noise since everything else
+          // defaults to it.
+          condition: categoryTracksCondition(categoryName) ? item.condition : null,
+        };
+      });
+  }, [allItems, roomsById, categoriesById]);
+
+  const totalLowStockFromQuery = lowStockItems.length;
 
   return (
     <div className="space-y-6">
@@ -185,6 +230,13 @@ export const InventoryOverviewPanel = () => {
         </div>
       </div>
 
+      {/* Error State */}
+      {itemsIsError && (
+        <div className="rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
+          Failed to load inventory overview: {getErrorMessage(itemsError)}
+        </div>
+      )}
+
       {/* Action Needed Section */}
       {hasActionItems && (
         <Card className="border-destructive/30 bg-destructive/5">
@@ -195,7 +247,7 @@ export const InventoryOverviewPanel = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {lowStockItems && lowStockItems.length > 0 ? (
+            {lowStockItems.length > 0 ? (
               <>
                 {lowStockItems.map(item => {
                   const pct = Math.round((item.quantity / item.minimum_quantity) * 100);
@@ -205,14 +257,25 @@ export const InventoryOverviewPanel = () => {
                       className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium truncate">{item.name}</span>
                           {item.category_name && (
                             <Badge variant="outline" className="text-xs shrink-0">
                               {item.category_name}
                             </Badge>
                           )}
+                          {item.condition && (
+                            <Badge variant={item.condition === "used" ? "secondary" : "outline"} className="text-xs shrink-0">
+                              {item.condition === "used" ? "Used" : "New"}
+                            </Badge>
+                          )}
                         </div>
+                        {item.room_label && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{item.room_label}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-1.5">
                           <Progress value={pct} className="h-1.5 flex-1" />
                           <span className="text-xs text-muted-foreground shrink-0">
@@ -274,7 +337,9 @@ export const InventoryOverviewPanel = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!mostUsedItems || mostUsedItems.length === 0 ? (
+          {mostUsedIsError ? (
+            <p className="text-destructive text-center py-6 text-sm">Couldn't load usage data. Try refreshing.</p>
+          ) : !mostUsedItems || mostUsedItems.length === 0 ? (
             <p className="text-muted-foreground text-center py-6 text-sm">No usage data for this period</p>
           ) : (
             <div className="space-y-1">
