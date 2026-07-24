@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tansta
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 import { QUERY_CONFIG } from '@/config';
+import { QUERY_KEYS } from '@/lib/queryKeys';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,12 +143,16 @@ export const InventoryItemsPanel = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Only storage rooms hold inventory, so that's all the room filter/transfer
+  // pickers need — listing every room in the building just made them
+  // cumbersome to scroll through.
   const { data: rooms } = useQuery<Room[]>({
-    queryKey: ["rooms"],
+    queryKey: QUERY_KEYS.storageRooms(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rooms")
         .select("id,name,room_number")
+        .eq("is_storage", true)
         .order("name");
       if (error) throw error;
       return (data || []) as Room[];

@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { QUERY_CONFIG } from '@/config';
+import { QUERY_KEYS } from '@/lib/queryKeys';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,10 +88,13 @@ export const InventoryOverviewPanel = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Every inventory item lives in a storage room, so that's the only set
+  // needed for room-label lookups here (also matches the filtered list used
+  // by the Stock tab and the create/edit item forms).
   const { data: rooms } = useQuery({
-    queryKey: ["rooms"],
+    queryKey: QUERY_KEYS.storageRooms(),
     queryFn: async () => {
-      const { data, error } = await supabase.from("rooms").select("id,name,room_number");
+      const { data, error } = await supabase.from("rooms").select("id,name,room_number").eq("is_storage", true);
       if (error) throw error;
       return data || [];
     },
