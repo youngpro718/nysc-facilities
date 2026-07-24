@@ -19,7 +19,10 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-[104] bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      // Above Sheet (z-[107]) so a Dialog opened from inside an already-open
+      // Sheet (e.g. Resolve Issue from the Issue Details panel) renders on
+      // top of it instead of behind its overlay.
+      "fixed inset-0 z-[108] bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -70,7 +73,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-[50%] z-[105] grid w-[calc(100%-16px)] sm:w-full max-w-lg translate-x-[-50%] gap-3 sm:gap-4 border bg-background p-4 sm:p-6 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg max-h-[85dvh] sm:max-h-[85vh] overflow-y-auto top-[env(safe-area-inset-top,8px)] sm:top-[50%] translate-y-0 sm:translate-y-[-50%]",
+          "fixed left-[50%] z-[109] grid w-[calc(100%-16px)] sm:w-full max-w-lg translate-x-[-50%] gap-3 sm:gap-4 border bg-background p-4 sm:p-6 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg max-h-[85dvh] sm:max-h-[85vh] overflow-y-auto top-[env(safe-area-inset-top,8px)] sm:top-[50%] translate-y-0 sm:translate-y-[-50%]",
           className
         )}
         {...contentProps}

@@ -27,7 +27,10 @@ const DrawerOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-black/80", className)}
+    // Same tier as Dialog (z-[108]) — Drawer is its mobile-viewport
+    // counterpart (ModalFrame/responsive-dialog swap between them), so it
+    // needs to sit above Sheet too when opened from an already-open Sheet.
+    className={cn("fixed inset-0 z-[108] bg-black/80", className)}
     {...props}
   />
 ))
@@ -48,7 +51,7 @@ const DrawerContent = React.forwardRef<
       <DrawerPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-[109] mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
           className
         )}
         aria-describedby={undefined}
